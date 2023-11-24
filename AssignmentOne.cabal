@@ -27,7 +27,6 @@ library
   exposed-modules:
       Ansi
       Lib
-      Main
       Render
       Shapes
   other-modules:
@@ -42,13 +41,9 @@ library
 executable AssignmentOne
   main-is: Main.hs
   other-modules:
-      Ansi
-      Lib
-      Render
-      Shapes
       Paths_AssignmentOne
   hs-source-dirs:
-      src
+      app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       AssignmentOne
