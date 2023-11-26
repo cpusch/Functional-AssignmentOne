@@ -1,5 +1,5 @@
 module Render(Window,defaultWindow,samples,render) where
-import Ansi
+import Codec.Picture
 import Shapes
 
 
@@ -10,9 +10,9 @@ import Shapes
 data Window = Window Point Point (Int,Int)
 
 -- Default window renders a small region around the origin into
--- a 50x50 character image
+-- a 50x50 pixel image
 defaultWindow :: Window
-defaultWindow = Window (point (-1.5) (-1.5)) (point 1.5 1.5) (50,50)
+defaultWindow = Window (point (-1.5) (-1.5)) (point 1.5 1.5) (500,500)
 
 
 -- Generate a list of evenly spaced samples between two values.
@@ -26,17 +26,38 @@ pixels :: Window -> [[Point]]
 pixels (Window p0 p1 (w,h)) =
   [ [ point x y | x <- samples (getX p0) (getX p1) w ]
                 | y <- reverse $ samples (getY p0) (getY p1) h
-  ] 
+  ]
 
 -- generate list of all screen coordinates in window
 coords :: Window -> [[(Int,Int)]]
 coords (Window _ _ (w,h)) = [ [(x,y) | x <- [0..w]] | y <- [0..h] ]
 
-render win sh =  mapM_ pix locations
-  where 
-    pix (p,(x,y)) | p `inside` sh = goto x y  >> putStr "*"
-                  | otherwise     = return ()
-    -- locations is a list of abstract coords ("pixels") and
-    -- corresponding screen coords
-    locations :: [ (Point, (Int,Int) ) ]
-    locations = concat $ zipWith zip (pixels win) (coords win)
+
+-- To make the renderer more efficient I'll write a coordinate-transformer
+-- that way the O(n) lookup of locations will become an O(1) calculation of locations
+
+-- Linearly scale a value from the range [a1,a2] to the range [b1,b2]
+scaleValue :: Fractional a => (a,a) -> (a,a) -> a -> a
+scaleValue (a1,a2) (b1,b2) v = b1 + (v - a1) * (b2-b1) / (a2-a1)
+
+-- Convert a screen-space point into an image-space point
+-- in a specific window
+mapPoint :: Window -> (Int,Int) -> Point
+mapPoint (Window p0 p1 (w,h)) (x,y) = point scaledX scaledY
+  where
+    scaledX = scaleValue (0,fromIntegral w) (getX p0, getX p1) (fromIntegral x)
+    scaledY = scaleValue (0,fromIntegral h) (getY p0, getY p1) (fromIntegral y)
+
+
+-- Render a drawing into an image, then save into a file
+-- This version relates the Shape language coordinates to the pixel coordinates
+-- using the scaleValue function which is much faster than the original lookup based code.
+render :: String -> Window -> Drawing -> IO ()
+render path win sh = writePng path $ generateImage pixRenderer w h
+    where
+      Window _ _ (w,h) = win
+      pixRenderer x y = PixelRGB8 c c c where c = colorForImage $ mapPoint win (x,y)
+
+      colorForImage :: Point -> Pixel8
+      colorForImage p | p `inside` sh = 255
+                      | otherwise     = 0
