@@ -14,10 +14,13 @@ main = scotty 3000 $ do
     html "hello"
 
   get "/circle" $ do
-    liftIO $ render "output.png" defaultWindow cir
+    liftIO $ render "circle.png" defaultWindow cir
 
   get "/square" $ do
-    liftIO $ render "square.png" defaultWindow sq
+    liftIO $ render "square.png" defaultWindow sq 
+  get "/ellipse" $ do
+    liftIO $ render "ellipse.png" defaultWindow el
   where
     sq = [(scale (point 0.5 0.5), square)]
     cir = [(scale (point 0.5 0.5), circle)]
+    el = [(scale (point 0.25 0.5), circle)]
