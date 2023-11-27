@@ -15,12 +15,11 @@ main = scotty 3000 $ do
 
   get "/circle" $ do
     liftIO $ render "circle.png" defaultWindow cir
-
   get "/square" $ do
     liftIO $ render "square.png" defaultWindow sq 
   get "/ellipse" $ do
-    liftIO $ render "ellipse.png" defaultWindow el
+    liftIO $ render "ellipse.png" defaultWindow ellipse 
   where
     sq = [(scale (point 0.5 0.5), square)]
     cir = [(scale (point 0.5 0.5), circle)]
-    el = [(scale (point 0.25 0.5), circle)]
+    ellipse = [(scale (point 0.5 0.25), circle)]
