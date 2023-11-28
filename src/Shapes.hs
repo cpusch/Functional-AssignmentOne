@@ -2,7 +2,7 @@ module Shapes(
   Shape, Point, Vector, Transform, Drawing,
   point, getX, getY,
   empty, circle, square,
-  identity, translate, rotate, scale, (<+>),
+  identity, translate, shear, rotate, scale, (<+>),
   inside)  where
 
 
@@ -21,7 +21,7 @@ mult (Matrix r0 r1) v = Vector (cross r0 v) (cross r1 v)
 invert :: Matrix -> Matrix
 invert (Matrix (Vector a b) (Vector c d)) = matrix (d / k) (-b / k) (-c / k) (a / k)
   where k = a * d - b * c
-        
+
 -- 2x2 square matrices are all we need.
 data Matrix = Matrix Vector Vector
               deriving Show
@@ -40,9 +40,10 @@ point :: Double -> Double -> Point
 point = vector
 
 
-data Shape = Empty 
-           | Circle 
+data Shape = Empty
+           | Circle
            | Square
+           | Polygon [Point]
              deriving Show
 
 empty, circle, square :: Shape
@@ -50,6 +51,7 @@ empty, circle, square :: Shape
 empty = Empty
 circle = Circle
 square = Square
+polygon = Polygon
 
 -- Transformations
 
@@ -58,8 +60,10 @@ data Transform = Identity
            | Scale Vector
            | Compose Transform Transform
            | Rotate Matrix
+           | Shear Double Double 
              deriving Show
 
+shear = Shear
 identity = Identity
 translate = Translate
 scale = Scale
@@ -72,7 +76,7 @@ transform (Translate (Vector tx ty)) (Vector px py)  = Vector (px - tx) (py - ty
 transform (Scale (Vector tx ty))     (Vector px py)  = Vector (px / tx)  (py / ty)
 transform (Rotate m)                 p = invert m `mult` p
 transform (Compose t1 t2)            p = transform t2 $ transform t1 p
-
+transform (Shear tx ty) (Vector px py) = Vector (px + tx * py) (py + ty * px)
 -- Drawings
 
 type Drawing = [(Transform,Shape)]
@@ -80,7 +84,7 @@ type Drawing = [(Transform,Shape)]
 -- interpretation function for drawings
 
 inside :: Point -> Drawing -> Bool
-inside p d = any (inside1 p) d
+inside p = any (inside1 p)
 
 inside1 :: Point -> (Transform, Shape) -> Bool
 inside1 p (t,s) = insides (transform t p) s
